@@ -53,8 +53,8 @@ class Board:
 
 
 
-board = Board(Player('abc', 'X'), Player('rkt', 'O'))
-print(board.make_a_move(0, 0, 'X'))
+# board = Board(Player('abc', 'X'), Player('rkt', 'O'))
 # print(board.make_a_move(0, 0, 'X'))
+# # print(board.make_a_move(0, 0, 'X'))
 
 
