@@ -1,17 +1,20 @@
 import socket
 import threading
 
-from kivy.app import App
 from kivy.config import Config
-from kivy.uix.label import Label
+Config.set('graphics', 'width', '450')
+Config.set('graphics', 'height', '200')
 
+from kivy.app import App
+from kivy.uix.label import Label
 from kivy.uix.screenmanager import (ScreenManager, Screen)
+from kivy.core.window import Window
 
 from gui import (GameScreen, StartScreen, DisconnectScreen, EndGamePopup)
 
 
 class Socket:
-    def __init__(self, host='Orpheus', port=6544):
+    def __init__(self, host='localhost', port=20001):
         self.sock = socket.socket()
         self.sock.connect((host, port))
     
@@ -36,7 +39,7 @@ class SocketThread(threading.Thread):
                 break
 
             msg = msg.split(sep=':')
-            
+
             pos_str = msg[1].split(sep='#')
             x,y = map(lambda a: int(a), pos_str)
 
@@ -51,7 +54,7 @@ class SocketThread(threading.Thread):
                 popup.open()
             
             elif msg[0] == 'EMPATE':
-                popup = EndGamePopup(title="It's a tie!")
+                popup = EndGamePopup(title="It was a tie!")
                 popup.open()
 
 
@@ -61,6 +64,8 @@ class GameApp(App):
         self.current_turn = 0
         self.player_turn = 0
         self.socket = Socket()
+
+        Window.bind(on_request_close=self.on_request_close)
 
         sm = ScreenManager()
         
@@ -104,13 +109,13 @@ class GameApp(App):
 
         return symbol
 
+    def on_request_close(self, *args, **kwargs):
+        self.close()
+        return True
+
     def close(self, instance=None):
         self.root.current = 'disconnect'
         self.socket.send_msg(b'DESCONECTAR')
         self.stop()
-
-
-Config.set('graphics', 'width', '450')
-Config.set('graphics', 'height', '200')
 
 GameApp().run()
