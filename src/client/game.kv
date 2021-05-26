@@ -26,3 +26,25 @@
         Rectangle:
             pos: 5, self.y + self.height * 2/3
             size: self.width + 20, 5
+
+<StartScreen>:
+    name: 'start'
+    AnchorLayout:
+        Label:
+            text: "Connecting..."
+            font_size: 30
+            size_hint: 0.7, 0.7
+
+<DisconnectScreen>:
+    name: 'disconnect'
+    AnchorLayout:
+        Label:
+            text: "Disconnecting..."
+            font_size: 30
+            size_hint: 0.7, 0.7
+
+<EndGamePopup>:
+    title_size: 30
+    title_align: 'center'
+    pos_hint: {'right': 0.9}
+    size_hint: 0.4, 0.4
