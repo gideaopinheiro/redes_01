@@ -1,9 +1,11 @@
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.screenmanager import Screen
 
 
 class GameButton(Button):
@@ -13,20 +15,22 @@ class GameButton(Button):
         if app.can_play():
             x,y = self.grid_pos
             msg = '{}#{}'.format(x, y)
-            app.send_msg(msg)
+            app.send_move(msg)
             self.press()
     
     def press(self):
-        app = App.get_running_app()
+        if not self.disabled:
+            app = App.get_running_app()
 
-        self.text = app.get_symbol()
-        self.font_size = self.width
-        self.disabled = True
+            self.text = app.get_symbol()
+            self.font_size = self.width
+            self.disabled = True
 
-        app.root.update_player_labels()
+            app.game.update_player_labels()
 
     def set_grid_pos(self, pos):
         self.grid_pos = pos
+
 
 class GameGrid(GridLayout):
     def __init__(self, board, **kwargs):
@@ -119,16 +123,22 @@ class GameScreen(BoxLayout):
         
         exit_button = Button(
             text = 'Exit',
-            background_color = [1,.4,.4,1],
+            background_color = [1,0.4,0.4,1],
             size_hint = (0.7,0.5),
-            on_release = self._exit
+            on_release = App.get_running_app().close
         )
         
         exit_box.add_widget(exit_button)
 
         return exit_box
 
-    def _exit(self, instance):
-        app = App.get_running_app()
-        app.sock_thr.stop()
-        app.stop()
+
+class StartScreen(Screen):
+    pass
+
+class DisconnectScreen(Screen):
+    pass
+
+class EndGamePopup(Popup):
+    def on_dismiss(self):
+        App.get_running_app().close()
