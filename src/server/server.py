@@ -11,12 +11,10 @@ from app.Player import Player
 from app.Board import Board
 
 
-host = gethostname()
-port = 6544
-print(f'host: {host}\nport: {port}')
+address = ('localhost', 20001)
 
 server = socket(AF_INET, SOCK_STREAM)
-server.bind((host, port))
+server.bind(address)
 server.listen(5)
 
 games = {}
@@ -25,34 +23,25 @@ waiting_clients = []
 character_options = deque(['X', 'O'])
 
 
-def on_new_player(client, board):
-  # global waiting_list
-  # global character_options
-  # global waiting_clients
-  # board = None
-  # _, player_id = client.getpeername()
+def turn_off(client, msg='DESCONECTAR'):
+  client.send(msg.encode())
+  client.shutdown(SHUT_WR)
+  client.close()
 
-  # waiting_clients.append(client)
-  # player = Player(player_id, character_options.popleft())
 
-  # waiting_list.append(player)
-
-  # if len(waiting_list) % 2 == 0:
-  #   print(len(waiting_list))
-  #   board = Board(waiting_list[0], waiting_list[1])
-    # waiting_list.clear()
-    # for cli in waiting_clients:
+def on_new_player(socket_client, client_id, board):
   while True:
-    msg = client.recv(1024)
+    msg = socket_client.recv(1024)
     msg = msg.decode()
-    # N#N:C
-    if msg == 'sair':
+
+    if msg == 'DESCONECTAR':
+      turn_off(socket_client, msg)
       break
+
     x, rest = msg.split('#')
     y, char = rest.split(':')
-    movement_return = board.make_a_move(int(x), int(y), char)
-    print(msg)
-    print(movement_return)
+
+    movement_return = board.make_a_move(int(x), int(y), char, client_id)
 
 
 def initiate_game():
@@ -67,18 +56,21 @@ def initiate_game():
 
     global waiting_list
     global waiting_clients
+
     board = None
     _, player_id = con.getpeername()
 
     waiting_clients.append(con)
-    player = Player(player_id, character_options.popleft())
+    player = Player(player_id, character_options.popleft(), con)
 
     waiting_list.append(player)
 
     if len(waiting_list) % 2 == 0:
       board = Board(waiting_list[0], waiting_list[1])
-      for cli in waiting_clients:
-        threading.Thread(target=on_new_player, args=(cli, board)).start()
+      for cli in range(len(waiting_clients)):
+        message = f'INICIO:{waiting_list[cli].character}'
+        waiting_clients[cli].send(message.encode())
+        threading.Thread(target=on_new_player, args=(waiting_clients[cli], waiting_list[cli].id, board)).start()
 
 
 initiate_game()
