@@ -1,7 +1,4 @@
-class Player:
-  def __init__(self, id, character):
-    self.id = id
-    self.character = character
+from app.Player import Player
 
 class Board:
   def __init__(self, player1: Player, player2: Player):
@@ -11,7 +8,7 @@ class Board:
       ["", "", ""]
       ]
     self.players = {player1.character: player1, player2.character: player2}
-    self.status = 'Ninguem venceu'
+    self.status = 'jogando'
     self.player_time = player1
 
   
@@ -24,24 +21,24 @@ class Board:
       status, obj = self.checkGameStatus()
       
       if status == 'venceu':
-        message_winner = f'VENCEU'
-        message_loser = f'PERDEU'
+        message_winner = f'VENCEU:{x}#{y}:{char}'
+        message_loser = f'PERDEU:{x}#{y}:{char}'
         obj['winner'].send(message_winner.encode())
         obj['loser'].send(message_loser.encode())
-        return True
+        return False
       
       elif status == 'empatou':
-        message = 'EMPATOU'
+        message = f'EMPATE:{x}#{y}:{char}'
         self.players['X'].client.send(message.encode())
         self.players['O'].client.send(message.encode())
-        return True
+        return False
       
       else:
         message = f'VEZ:{x}#{y}:{char}'
         self.player_time.client.send(message.encode())
         return True
     
-    return False
+    return True
 
 
   def __validate_move(self, x, y, char):
@@ -91,14 +88,3 @@ class Board:
        
     else:
        return 'jogando', {}
-    
-      
-
-
-
-
-# board = Board(Player('abc', 'X'), Player('rkt', 'O'))
-# print(board.make_a_move(0, 0, 'X'))
-# # print(board.make_a_move(0, 0, 'X'))
-
-

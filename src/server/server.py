@@ -1,29 +1,12 @@
-# Rebece uma mensagem
-# Valida a mensagem mensagem
-# Processa a mensagem
-# Devolve uma resposta
-
 from socket import *
 import threading
 from collections import deque
 
-from app.Player import Player           
-from app.Board import Board
+from app.Board import *
 
 
-address = ('localhost', 20001)
 
-server = socket(AF_INET, SOCK_STREAM)
-server.bind(address)
-server.listen(5)
-
-games = {}
-waiting_list = []
-waiting_clients = []
-character_options = deque(['X', 'O'])
-
-
-def turn_off(client, msg='DESCONECTAR'):
+def disconnect_client(client, msg='DESCONECTAR'):
   client.send(msg.encode())
   client.shutdown(SHUT_WR)
   client.close()
@@ -35,17 +18,19 @@ def on_new_player(socket_client, client_id, board):
     msg = msg.decode()
 
     if msg == 'DESCONECTAR':
-      turn_off(socket_client, msg)
+      disconnect_client(socket_client, msg)
       break
 
     x, rest = msg.split('#')
     y, char = rest.split(':')
 
     movement_return = board.make_a_move(int(x), int(y), char, client_id)
+    if not movement_return:
+      disconnect_client(socket_client)
+      break
 
 
-def initiate_game():
-  global character_options
+def initiate_game(character_options, waiting_list, waiting_clients, server):
 
   while True:
     con, addr = server.accept()
@@ -53,9 +38,6 @@ def initiate_game():
     if len(character_options) == 0:
       character_options.append('X')
       character_options.append('O')
-
-    global waiting_list
-    global waiting_clients
 
     board = None
     _, player_id = con.getpeername()
@@ -71,6 +53,19 @@ def initiate_game():
         message = f'INICIO:{waiting_list[cli].character}'
         waiting_clients[cli].send(message.encode())
         threading.Thread(target=on_new_player, args=(waiting_clients[cli], waiting_list[cli].id, board)).start()
+      waiting_list.clear()
+      waiting_clients.clear()
 
 
-initiate_game()
+if __name__ == '__main__':
+  address = ('localhost', 20001)
+
+  server = socket(AF_INET, SOCK_STREAM)
+  server.bind(address)
+  server.listen(5)
+
+  waiting_list = []
+  waiting_clients = []
+  character_options = deque(['X', 'O'])
+
+  initiate_game(character_options, waiting_list, waiting_clients, server)
